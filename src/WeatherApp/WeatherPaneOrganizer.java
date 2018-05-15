@@ -13,10 +13,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
+import javafx.scene.text.TextAlignment;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -33,20 +31,24 @@ import java.util.Scanner;
 
 public class WeatherPaneOrganizer {
 
-    private static final int WIDTH = 1000, HEIGHT = 600;
-    private static final String FX_BACKGROUND = "-fx-background-color: ",
-                                FX_FONT_SIZE = "-fx-font-size: ",
+    private static final int WIDTH = 450, HEIGHT = 300;
+    private static final String FX_FONT_SIZE = "-fx-font-size: ",
                                 FX_TEXT_COLOR = "-fx-text-fill: ";
     private static final String INVALID_CITY_NAME = "Miasto nie zostało znalezione!";
     BorderPane root;
     String cityName;
     Map<String, Object> weatherData;
 
-    public WeatherPaneOrganizer() throws IOException, JSONException{
+    public WeatherPaneOrganizer(String cityName) throws IOException, JSONException{
 
         root = new BorderPane();
-        root.setStyle(FX_BACKGROUND + "blue;");
         root.setPrefSize(WIDTH, HEIGHT);
+        this.cityName = cityName;
+
+       /*
+        ****************************************************************************************
+        * Geolocalization - working properly only with correct IP passed in a getByName function
+        ****************************************************************************************
 
         String countryDefault = new String();
         String cityDefault = new String();
@@ -69,7 +71,8 @@ public class WeatherPaneOrganizer {
         }
 
         String receivedCityName = cityDefault + " , " + countryDefault;
-        if(receivedCityName.matches(".*null.*")) cityName = "Warszawa, Polska";
+        if(receivedCityName.matches(".*null.*"))
+        */
 
         weatherData = GetWeather.getWeather(cityName);
 
@@ -77,6 +80,7 @@ public class WeatherPaneOrganizer {
         setCurrent(); // in left pane
         setDaily(); // in right pane
     }
+
     public Pane getRoot() {
         return root;
     }
@@ -85,22 +89,22 @@ public class WeatherPaneOrganizer {
         // Main top is a Horizontal box with 3 items
         HBox top = new HBox();
         root.setTop(top);
-        HBox.setMargin(top, new Insets(15, 12, 15, 12)); // Sets overall margins for box
+        HBox.setMargin(top, new Insets(5)); // Sets overall margins for box
         top.setAlignment(Pos.CENTER);
-        top.setStyle(FX_BACKGROUND + "#016367;");
 
         // City label
         Label city = new Label(cityName);
-        city.setStyle(FX_TEXT_COLOR + "white;" + FX_FONT_SIZE + "40;");
+        city.setStyle(FX_TEXT_COLOR + "white;" + FX_FONT_SIZE + "30;");
 
-        // Exit button
-        Button exitButton = new Button();
+        // Exit button - option
+        /*Button exitButton = new Button();
         exitButton.setText("Wyjście");
-        HBox.setMargin(exitButton, new Insets(0, 0, 0, 20));
+        HBox.setMargin(exitButton, new Insets(0, 0, 0, 10));
         exitButton.setOnAction(e-> Platform.exit());
+        */
 
         Button changeButton = new Button();
-        HBox.setMargin(changeButton, new Insets(0, 0, 0, 20));
+        HBox.setMargin(changeButton, new Insets(0, 0, 0, 10));
         changeButton.setText("Zmiana miasta");
         changeButton.setOnAction(e-> {
             try {
@@ -112,7 +116,7 @@ public class WeatherPaneOrganizer {
             }
         });
 
-        top.getChildren().addAll(city, changeButton, exitButton);
+        top.getChildren().addAll(city, changeButton); // exitButton optionally
     }
 
     private void changeCity() throws IOException, JSONException {
@@ -140,9 +144,72 @@ public class WeatherPaneOrganizer {
         JSONObject obj = new JSONObject(str);
 
         if(obj.getString("status").equals("OK")){
-            cityName = obj.getJSONArray("results")
+            String city;
+            String country;
+            int addressComponentsLength;
+            String addressType;
+
+            addressComponentsLength = obj.getJSONArray("results")
                     .getJSONObject(0)
-                    .getString("formatted_address");
+                    .getJSONArray("address_components").length();
+
+            addressType = obj.getJSONArray("results")
+                    .getJSONObject(0)
+                    .getJSONArray("address_components")
+                    .getJSONObject(addressComponentsLength-1)
+                    .getJSONArray("types")
+                    .getString(0);
+
+            if(addressType.equals("country")){
+                country = obj.getJSONArray("results")
+                        .getJSONObject(0)
+                        .getJSONArray("address_components")
+                        .getJSONObject(addressComponentsLength-1)
+                        .getString("long_name");
+            } else {
+                country = obj.getJSONArray("results")
+                        .getJSONObject(0)
+                        .getJSONArray("address_components")
+                        .getJSONObject(addressComponentsLength-2)
+                        .getString("long_name");
+            }
+
+            if(country.length() > 16){
+                switch(country){
+                    case "Zjednoczone Emiraty Arabskie":
+                        country = "ZEA";
+                        break;
+                    case "Wybrzeże Kości Słoniowej":
+                        country = "WKS";
+                        break;
+                    case "Stany Zjednoczone":
+                        country = "USA";
+                        break;
+                    case "Republika Południowej Afryki":
+                        country = "RPA";
+                        break;
+                    case "Demokratyczna Republika Konga":
+                        country = "DR Konga";
+                        break;
+                    case "Bośnia i Hercegowina":
+                        country = "Bośnia i Herc.";
+                        break;
+                    default:
+                        country = obj.getJSONArray("results")
+                                .getJSONObject(0)
+                                .getJSONArray("address_components")
+                                .getJSONObject(addressComponentsLength-1)
+                                .getString("short_name");
+                }
+            }
+
+            city = obj.getJSONArray("results")
+                    .getJSONObject(0)
+                    .getJSONArray("address_components")
+                    .getJSONObject(0)
+                    .getString("long_name");
+
+            cityName = city + ", " + country;
 
             weatherData = GetWeather.getWeather(cityName);
 
@@ -159,34 +226,32 @@ public class WeatherPaneOrganizer {
 
         // Main layout is a VBox
         VBox currentPane = new VBox();
-        currentPane.setPrefWidth(WIDTH * 0.25);
-        currentPane.setStyle(FX_BACKGROUND + "#44af92;");
+        currentPane.setPrefWidth(WIDTH * 0.3);
         currentPane.setAlignment(Pos.CENTER);
-        currentPane.setPadding(new Insets(15));
+        currentPane.setPadding(new Insets(5));
 
-        HBox temperatureBox = new HBox();
+        VBox temperatureBox = new VBox();
         temperatureBox.setAlignment(Pos.CENTER);
 
         Map<String, String> currentWeather = (Map<String, String>) weatherData.get("current");
 
-        // Top box is the status image. The image location comes from the StatusImage class.
-
-        Image currentImageIcon = new Image(StatusImage.getImage(currentWeather.get("icon")));
-        ImageView currentImage = new ImageView(currentImageIcon);
-        Node summaryImage = currentImage;
-        VBox.setMargin(summaryImage, new Insets(0, 0, 20, 0));
-
-        // Bottom box is an HBox with the label and temperature
+        // Top box is an HBox with the label and temperature
         Label currently = new Label("Aktualnie:");
-        currently.setStyle(FX_TEXT_COLOR + "white;" + FX_FONT_SIZE + "30;");
+        currently.setStyle(FX_TEXT_COLOR + "white;" + FX_FONT_SIZE + "26;");
         currently.setMaxHeight(Double.MAX_VALUE);
 
         Label currentTemperature = new Label(currentWeather.get("temp"));
-        currentTemperature.setStyle(FX_TEXT_COLOR + "white;" + FX_FONT_SIZE + "40;");
+        currentTemperature.setStyle(FX_TEXT_COLOR + "white;" + FX_FONT_SIZE + "30;");
         temperatureBox.getChildren().addAll(currently, currentTemperature);
         HBox.setMargin(temperatureBox, new Insets(10));
 
-        currentPane.getChildren().addAll(summaryImage, temperatureBox);
+        // Bottom box is the status image. The image location comes from the StatusImage class.
+        Image currentImageIcon = new Image(StatusImage.getImage(currentWeather.get("icon")));
+        ImageView currentImage = new ImageView(currentImageIcon);
+        Node summaryImage = currentImage;
+        VBox.setMargin(summaryImage, new Insets(0, 0, 10, 0));
+
+        currentPane.getChildren().addAll(temperatureBox, summaryImage);
         root.setLeft(currentPane);
     }
 
@@ -194,15 +259,14 @@ public class WeatherPaneOrganizer {
 
         // Main layout is a VBox
         VBox dailyPane = new VBox();
-        dailyPane.setPrefWidth(WIDTH * 0.625);
-        dailyPane.setStyle(FX_BACKGROUND + "#9fedd4;");
+        dailyPane.setPrefWidth(WIDTH * 0.7);
         dailyPane.setAlignment(Pos.CENTER);
-        dailyPane.setPadding(new Insets(15));
+        dailyPane.setPadding(new Insets(5));
 
         Label forecast = new Label("Prognoza tygodniowa");
-        forecast.setStyle(FX_TEXT_COLOR + "black;" + FX_FONT_SIZE + "30;");
+        forecast.setStyle(FX_TEXT_COLOR + "white;" + FX_FONT_SIZE + "18;");
         forecast.setPrefWidth(WIDTH);
-        forecast.setAlignment(Pos.TOP_LEFT);
+        forecast.setAlignment(Pos.TOP_CENTER);
         dailyPane.getChildren().add(forecast);
 
         ArrayList< Map <String, String> > dailyForecast = (ArrayList <Map <String, String> >) weatherData.get("daily");
@@ -212,24 +276,24 @@ public class WeatherPaneOrganizer {
             HBox daily = new HBox();
 
             Label day = new Label(dailyForecast.get(i).get("day"));
-            day.setStyle(FX_TEXT_COLOR + "black;" + FX_FONT_SIZE + "20;");
+            day.setStyle(FX_TEXT_COLOR + "white;" + FX_FONT_SIZE + "15;");
             day.setMaxHeight(Double.MAX_VALUE);
-            day.setPrefWidth(WIDTH * 3 / 16);
+            day.setPrefWidth(WIDTH * 5 / 16);
 
             Label high = new Label(dailyForecast.get(i).get("high"));
-            high.setStyle(FX_TEXT_COLOR + "red;" + FX_FONT_SIZE + "20;");
+            high.setStyle(FX_TEXT_COLOR + "red;" + FX_FONT_SIZE + "15;");
             high.setMaxHeight(Double.MAX_VALUE);
             high.setPrefWidth(WIDTH * 2 / 16);
 
             Label low = new Label(dailyForecast.get(i).get("low"));
-            low.setStyle(FX_TEXT_COLOR + "blue;" + FX_FONT_SIZE + "20;");
+            low.setStyle(FX_TEXT_COLOR + "blue;" + FX_FONT_SIZE + "15;");
             low.setMaxHeight(Double.MAX_VALUE);
             low.setPrefWidth(WIDTH * 2 / 16);
 
             Image dailyImageIcon = new Image(StatusImage.getImage(dailyForecast.get(i).get("icon")));
             ImageView currentdailyImage = new ImageView(dailyImageIcon);
             Node dailyImage = currentdailyImage;
-            VBox.setMargin(dailyImage, new Insets(0, 0, 20, 0));
+            VBox.setMargin(dailyImage, new Insets(5, 5, 10, 5));
 
             daily.getChildren().addAll(day, high, low, dailyImage);
             dailyPane.getChildren().add(daily);

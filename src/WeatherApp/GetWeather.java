@@ -6,12 +6,11 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.net.URL;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 
 /**
  * Created by Asus on 2018-04-29.
@@ -73,12 +72,19 @@ public class GetWeather {
                             .getJSONObject("item")
                             .getJSONArray("forecast");
 
+        DateFormat dateFormat = new SimpleDateFormat("dd/MM");
+        Calendar cal = Calendar.getInstance();
+
         for (int i = 0 ; i < 7; i++){
             Map <String, String> dailyDataPoint = new HashMap <String, String> ();
 
             WeekdayName polishName = new WeekdayName();
 
-                dailyDataPoint.put("day", polishName.toPolish(daily.getJSONObject(i).getString("day")));
+                if(i == 0)  dailyDataPoint.put("day", "Dzisiaj" + ", " + dateFormat.format(cal.getTime()));
+                else dailyDataPoint.put("day", polishName.toPolish(daily
+                                                                    .getJSONObject(i)
+                                                                    .getString("day"))
+                                                                    + ", " + dateFormat.format(cal.getTime()));
 
                 int dailyHigh = (int) daily.getJSONObject(i).getLong("high");
                 dailyDataPoint.put("high", dailyHigh + CELSIUS_DEGREE);
@@ -89,6 +95,8 @@ public class GetWeather {
                 dailyDataPoint.put("icon", daily.getJSONObject(i).getString("code"));
 
                 dailyData.add(dailyDataPoint);
+
+                cal.add(Calendar.DATE, 1);
     }
 
         weatherData.put("daily", dailyData);

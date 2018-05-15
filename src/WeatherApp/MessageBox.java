@@ -25,7 +25,7 @@ public class MessageBox {
         Stage stage = new Stage();
         stage.initModality(Modality.APPLICATION_MODAL); // Requires the message box to be completed before continuing
         stage.setTitle("Nowe miasto");
-        stage.setMinWidth(250);
+        stage.setMaxWidth(500);
 
         /*
          * The main layout is a VBox and two HBoxes in it
@@ -35,10 +35,13 @@ public class MessageBox {
 
         TextField city = new TextField();
         city.setPromptText("Podaj miasto, w którym chcesz sprawdzić pogodę");
-        city.setMaxWidth(50);
+        city.setPrefWidth(150);
+        city.setAlignment(Pos.CENTER);
 
         Label cityLabel = new Label();
         cityLabel.setText("Nazwa miasta: ");
+        cityLabel.setPrefWidth(100);
+        cityLabel.setAlignment(Pos.CENTER);
 
         HBox cityNamePane = new HBox(10);
         cityNamePane.setAlignment(Pos.CENTER);
@@ -59,7 +62,7 @@ public class MessageBox {
         buttons.setAlignment(Pos.CENTER);
         buttons.getChildren().addAll(okButton, cancelButton);
 
-        VBox pane = new VBox(20);
+        VBox pane = new VBox(10);
         pane.setPrefSize(250, 100);
         pane.setStyle("-fx-background-color: skyblue;");
         pane.getChildren().addAll(cityNamePane, buttons);
